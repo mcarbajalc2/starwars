@@ -1,0 +1,59 @@
+service: starWars
+
+frameworkVersion: "2"
+
+provider:
+    name: aws
+    runtime: nodejs12.x
+    lambdaHashingVersion: 20201221
+    region: sa-east-1
+    environment:
+        TABLE_NAME: "TablaPeliculas"
+    iamRoleStatements:
+        - Effect: "Allow"
+          Action:
+              - "dynamodb:GetItem"
+              - "dynamodb:PutItem"
+              - "dynamodb:UpdateItem"
+              - "dynamodb:DeleteItem"
+              - "dynamodb:Scan"
+          Resource:
+              - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TABLE_NAME}"
+
+functions:
+    transform:
+        handler: handler.transformApi
+        events:
+            - http:
+                  method: get
+                  path: transformar
+
+    addFilm:
+        handler: handler.addFilm
+        events:
+            - http:
+                  method: post
+                  path: pelicula
+
+    listFilms:
+        handler: handler.listFilms
+        events:
+            - http:
+                  method: get
+                  path: pelicula
+
+resources:
+    Resources:
+        TablaPeliculas:
+            Type: "AWS::DynamoDB::Table"
+            Properties:
+                AttributeDefinitions:
+                    - AttributeName: "id_pelicula"
+                      AttributeType: "S"
+                KeySchema:
+                    - AttributeName: "id_pelicula"
+                      KeyType: "HASH"
+                ProvisionedThroughput:
+                    ReadCapacityUnits: 1
+                    WriteCapacityUnits: 1
+                TableName: ${self:provider.environment.TABLE_NAME}
